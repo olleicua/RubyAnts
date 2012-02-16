@@ -89,7 +89,7 @@ def calculateSquaresBoringness map, frontier = (unexploredSquares map), currentB
     end
   end
   log "rec #{currentBoringness}"
-  calculateSquaresBoringness(map, (newFrontier.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}), (currentBoringness+1))
+  calculateSquaresBoringness(map, (newFrontier.uniq.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}), (currentBoringness+1))
 end
 
 $:.unshift File.dirname($0)
