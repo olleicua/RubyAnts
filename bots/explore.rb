@@ -50,8 +50,11 @@ class Square
   def unsafe?
     not self.safe?
   end
-  def targetable?
-    self.safe? and (not @visited)
+  def unvisited?
+    not self.visited
+  end
+  def interesting?
+    self.land? and (self.unvisited? or self.food?)
   end
 end
 
@@ -66,7 +69,7 @@ def log v
 end
 
 def unexploredSquares map
-  map.flatten(1).reject{|square| square.visited or square.water?}
+  map.flatten(1).reject{|square| not square.interesting?}
 end
 
 # frontier is an array!
