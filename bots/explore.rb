@@ -82,7 +82,7 @@ def calculateSquaresBoringness map, frontier = (unexploredSquares map), currentB
 #    log "yo #{square.row} #{square.col}  #{square.boringness == nil and not square.water?}"
     if square.boringness == nil and not square.water?
       square.boringness = currentBoringness
-      newFrontier += square.neighbors #.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}
+      newFrontier.push(*square.neighbors) #.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}
     end
   end
   log "rec #{currentBoringness}"
