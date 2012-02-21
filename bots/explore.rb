@@ -72,7 +72,13 @@ def unexploredSquares map
   map.flatten(1).reject{|square| not square.interesting?}
 end
 
-# frontier is an array!
+# calculateSquaresBoringness does a breadth-first traversal
+# over land squares from a given set ('frontier' array) of
+# "interesting" land squares.
+#
+# It marks each square with the number of N/S/E/W steps on land
+# needed to reach an interesting square.  It does not mark
+# squares that are inaccessible from the given "interesting" squares.
 def calculateSquaresBoringness map, frontier = (unexploredSquares map), currentBoringness = 0
   ""
   log "sz #{frontier.size}"
