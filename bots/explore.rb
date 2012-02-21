@@ -5,6 +5,10 @@
   Jan-Feb 2012               | opensource.org/licenses/MIT
 =end
 
+# CONSTANTS #
+
+Infinity = 1.0 / 0.0
+
 # METHODS #
 
 class Array
@@ -16,6 +20,7 @@ end
 class Square
   # A square is "visited" if one of our ants have ever been in it.
   attr_accessor :visited
+  attr_writer :boringness
 
   # A (non-water) square's "boringness" is 0 if it's unvisited,
   # or N where N is the number of steps on land required to
@@ -44,6 +49,9 @@ class Square
       return "a"
     end
   end
+  def neighbors
+    [:N, :S, :E, :W].map{|dir| self.neighbor dir}
+  end
   def safe?
     not (self.ant? or self.water?)
   end
@@ -55,6 +63,55 @@ class Square
   end
   def interesting?
     self.land? and (self.unvisited? or self.food?)
+  end
+  def getBoringness
+    if @boringness.nil? and (not @searching)
+      @searching = true
+      @boringness = self.calculateBoringness
+      @searching = false
+    end
+    return Infinity if @searching
+    return @boringness
+  end
+  def calculateBoringness
+    return Infinity if self.water?
+    return 0 unless self.visited
+    return self.neighbors.map{|square| square.getBoringness}.min + 1
+  end
+end
+
+class AI
+  def unexploredSquares
+    @map.flatten(1).reject{|square| not square.interesting?}
+  end
+
+  # calculateBoringness does a breadth-first traversal
+  # over land squares from a given set ('frontier' array) of
+  # "interesting" land squares.
+  #
+  # It marks each square with the number of N/S/E/W steps on land
+  # needed to reach an interesting square.  It does not mark
+  # squares that are inaccessible from the given "interesting" squares.
+  def calculateBoringness frontier=self.unexploredSquares, currentBoringness=0
+    log "currentBoringness = #{currentBoringness}, |frontier| = #{frontier.size}"
+    
+    return if frontier.size == 0
+    
+    newFrontier = []
+    
+    frontier.each do |square|
+      if square.boringness == nil and not square.water?
+        square.boringness = currentBoringness
+        
+        # is this filter more efficient before or after the loop?
+        relevantNeighbors = square.neighbors.reject do |neighbor|
+          neighbor.boringness != nil or neighbor.water?
+        end
+        
+        newFrontier.push *relevantNeighbors
+      end
+    end
+    calculateBoringness newFrontier.uniq, currentBoringness + 1
   end
 end
 
@@ -68,44 +125,12 @@ def log v
   Log.flush
 end
 
-def unexploredSquares map
-  map.flatten(1).reject{|square| not square.interesting?}
-end
-
-# calculateSquaresBoringness does a breadth-first traversal
-# over land squares from a given set ('frontier' array) of
-# "interesting" land squares.
-#
-# It marks each square with the number of N/S/E/W steps on land
-# needed to reach an interesting square.  It does not mark
-# squares that are inaccessible from the given "interesting" squares.
-def calculateSquaresBoringness map, frontier = (unexploredSquares map), currentBoringness = 0
-  ""
-  log "sz #{frontier.size}"
-  return if frontier.size == 0
-
-  newFrontier = []
-
-  log "go go gogogo!"
-  frontier.each do |square|
-#    log "yo #{square.row} #{square.col}  #{square.boringness == nil and not square.water?}"
-    if square.boringness == nil and not square.water?
-      square.boringness = currentBoringness
-      newFrontier.push(*square.neighbors) #.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}
-    end
-  end
-  log "rec #{currentBoringness}"
-  calculateSquaresBoringness(map, (newFrontier.uniq.reject{|neighbor| neighbor.boringness != nil or neighbor.water?}), (currentBoringness+1))
-end
-
 $:.unshift File.dirname($0)
 require 'ants.rb'
 ai = AI.new
-ai.setup do
-  log "hello"
-end
+ai.setup{}
 ai.run do |ai| # this block is executed once for each turn
-  log "hi turn #{ai.turn_number}"
+  
   # mark successfully visitted squares as visitted
   ai.map.each do |row|
     row.each do |square|
@@ -114,22 +139,33 @@ ai.run do |ai| # this block is executed once for each turn
     end
   end
 
-  calculateSquaresBoringness ai.map
+  # calculate boringness
+  ai.calculateBoringness
   
   ai.my_ants.each do |ant|
-    possibleNeighbors = ant.square.neighbors.reject{|neighbor| neighbor.unsafe? or neighbor.boringness == nil}
-    if possibleNeighbors.size > 0
-      log "best? #{possibleNeighbors.map{|neighbor| neighbor.boringness}}"
-      best = possibleNeighbors.map{|neighbor| neighbor.boringness}.min
-      log "best #{best}"
-      move = [:N, :E, :S, :W] \
-        .reject{|dir| ant.square.neighbor(dir).unsafe? or ant.square.neighbor(dir).boringness != best} \
-        .random
     
+    log "eliminate squares from which interesting squares cannot be reached"
+    # eliminate squares from which interesting squares cannot be reached
+    possibleMoves = [:N, :E, :S, :W].reject do |dir|
+      square = ant.square.neighbor(dir)
+      square.unsafe? or square.boringness == nil
+    end
+    
+    log "possible moves: #{possibleMoves.join ', '}"
+    
+    log "pick best move"
+    # pick a best move
+    if possibleMoves.size > 0
+      best = possibleMoves.map{|dir| ant.square.neighbor(dir).boringness}.min
+      move = possibleMoves \
+        .reject{|dir| ant.square.neighbor(dir).boringness != best} \
+        .random
+      # order the ant if a valid move exists
+      log "move #{move}"
       if move
-        ant.order move
-        ant.square.neighbor(move).ant = ant
         ant.square.ant = nil
+        ant.square.neighbor(move).ant = ant
+        ant.order move
       end
     end
   end
