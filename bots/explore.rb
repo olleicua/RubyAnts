@@ -20,7 +20,6 @@ end
 class Square
   # A square is "visited" if one of our ants have ever been in it.
   attr_accessor :visited
-  attr_writer :boringness
 
   # A (non-water) square's "boringness" is 0 if it's unvisited,
   # or N where N is the number of steps on land required to
@@ -63,20 +62,6 @@ class Square
   end
   def interesting?
     self.land? and (self.unvisited? or self.food?)
-  end
-  def getBoringness
-    if @boringness.nil? and (not @searching)
-      @searching = true
-      @boringness = self.calculateBoringness
-      @searching = false
-    end
-    return Infinity if @searching
-    return @boringness
-  end
-  def calculateBoringness
-    return Infinity if self.water?
-    return 0 unless self.visited
-    return self.neighbors.map{|square| square.getBoringness}.min + 1
   end
 end
 
