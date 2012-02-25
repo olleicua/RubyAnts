@@ -8,6 +8,7 @@
 # CONSTANTS #
 
 Infinity = 1.0 / 0.0
+CardinalDirections = [:N, :S, :E, :W]
 
 # METHODS #
 
@@ -33,7 +34,7 @@ class Square
   attr_accessor :boringness
 
   def neighbors
-    [:N, :E, :S, :W].map{|dir| self.neighbor dir}
+    CardinalDirections.map{|dir| self.neighbor dir}
   end
   def to_s
     if self.land?
@@ -47,9 +48,6 @@ class Square
     elsif self.ant?
       return "a"
     end
-  end
-  def neighbors
-    [:N, :S, :E, :W].map{|dir| self.neighbor dir}
   end
   def safe?
     not (self.ant? or self.water?)
@@ -131,7 +129,7 @@ ai.run do |ai| # this block is executed once for each turn
     
     log "eliminate squares from which interesting squares cannot be reached"
     # eliminate squares from which interesting squares cannot be reached
-    possibleMoves = [:N, :E, :S, :W].reject do |dir|
+    possibleMoves = CardinalDirections.reject do |dir|
       square = ant.square.neighbor(dir)
       square.unsafe? or square.boringness == nil
     end
