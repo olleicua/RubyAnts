@@ -1,4 +1,6 @@
 /game_logs/*
 /bots/log.txt
 /log.txt
+/bots/aggress-log.txt
+/aggress-log.txt
 __pycache__
