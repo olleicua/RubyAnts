@@ -1,0 +1,4 @@
+/game_logs/*
+/bots/log.txt
+/log.txt
+__pycache__
