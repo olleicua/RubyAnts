@@ -25,6 +25,10 @@ class Square
   # A square is "visited" if one of our ants have ever been in it.
   attr_accessor :visited
   
+  # A square is "seen" if one of our ants have ever been within
+  # the view radius of it.
+  attr_accessor :seen
+  
   # @boringnesses = { :unseen => n, :food => n, :enemyHill => n }
   #
   # A (non-water) square's "boringness" of a type is 0 if it's
@@ -61,8 +65,11 @@ class Square
   def unvisited?
     not self.visited
   end
+  def unseen?
+    not self.seen
+  end
   def interesting?
-    self.land? and (self.unvisited? or self.food?)
+    self.land? and (self.unseen? or self.food?)
   end
 
   # rateBoringness returns a number whose useful property is that:
@@ -82,13 +89,14 @@ class Square
     # makes it easier to write a function that can fairly compare any
     # two locations we're considering moving to, even when the two
     # locations fall on different sides of that threshold.
-    result = Math.sqrt(distanceToUnseen) + Math.sqrt(distanceToFood*2) + Math.sqrt(distanceToEnemy*3)
+    result = Math.sqrt(distanceToUnseen) + Math.sqrt(distanceToFood*2) + Math.sqrt(distanceToEnemy*10)
     log "#{@col},#{@row} boringness: #{distanceToUnseen}, #{distanceToFood}, #{distanceToEnemy} ==> #{result}"
     return result
   end
 end
 
 class AI
+  attr_accessor :sightRadius
   def unexploredSquares
     @map.flatten(1).reject{|square| not square.interesting?}
   end
@@ -147,14 +155,31 @@ end
 $:.unshift File.dirname($0)
 require 'ants.rb'
 ai = AI.new
-ai.setup{}
+ai.setup do |ai|
+  ai.sightRadius = ai.viewradius.floor - 3
+  #ai.sightRadius = 2
+end
 ai.run do |ai| # this block is executed once for each turn
   log "TURN #{ai.turn_number}"
   
   # mark successfully visitted squares as visitted
+  # mark squares in view of ants as seen
+  ai.my_ants.each do |ant|
+    row = ant.square.row
+    col = ant.square.col
+    ai.map[(row - ai.sightRadius) .. (row + ai.sightRadius)].each do |thisRow|
+      thisRow[(col - ai.sightRadius) .. (col + ai.sightRadius)].each do |square|
+        square.seen = true
+      end
+    end
+    #ant.square.seen = true
+    #ant.square.neighbors.each{|square| square.seen = true}
+  end
+
+  # mark successfully visitted squares as visitted
   ai.map.each do |row|
     row.each do |square|
-      square.visited = true if square.ant? and square.ant.mine?
+      #square.visited = true if square.ant? and square.ant.mine?
       square.boringnesses = {}
     end
   end
