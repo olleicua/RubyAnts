@@ -13,6 +13,10 @@ LargeFiniteNumber = 100000000
 OurOwnerID = 0
 CardinalDirections = [:N, :S, :E, :W]
 
+ExploreWeight = 1
+FoodWeight = 2
+HillWeight = 10
+
 # METHODS #
 
 class Array
@@ -89,8 +93,10 @@ class Square
     # makes it easier to write a function that can fairly compare any
     # two locations we're considering moving to, even when the two
     # locations fall on different sides of that threshold.
-    result = Math.sqrt(distanceToUnseen) + Math.sqrt(distanceToFood*2) + Math.sqrt(distanceToEnemy*10)
-    log "#{@col},#{@row} boringness: #{distanceToUnseen}, #{distanceToFood}, #{distanceToEnemy} ==> #{result}"
+    result = Math.sqrt(distanceToUnseen * ExploreWeight) +
+      Math.sqrt(distanceToFood * FoodWeight) +
+      Math.sqrt(distanceToEnemy * HillWeight)
+    #log "#{@col},#{@row} boringness: #{distanceToUnseen}, #{distanceToFood}, #{distanceToEnemy} ==> #{result}"
     return result
   end
 end
@@ -156,7 +162,7 @@ $:.unshift File.dirname($0)
 require 'ants.rb'
 ai = AI.new
 ai.setup do |ai|
-  ai.sightRadius = ai.viewradius.floor - 3
+  ai.sightRadius = ai.viewradius.floor - 4
   #ai.sightRadius = 2
 end
 ai.run do |ai| # this block is executed once for each turn
