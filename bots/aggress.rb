@@ -102,7 +102,25 @@ class Square
 end
 
 class AI
-  attr_accessor :sightRadius
+  # Pass the integer radius2 that the simulation provides.
+  # This way we get an exact answer.
+  def squaresWithinRadius2 square, radius2
+    # per http://ants.aichallenge.org/specification.php#distance
+    result = []
+    # Examine a big enough square to include everywhere within the radius.
+    radiusRounded = Math.sqrt(radius2).floor
+    ((square.row - radiusRounded) .. (square.row + radiusRounded)).each do |rowRaw|
+      ((square.col - radiusRounded) .. (square.col + radiusRounded)).each do |colRaw|
+        row, col = normalize rowRaw, colRaw
+        dr = [(row - square.row).abs, self.rows - (row - square.row).abs].min
+        dc = [(col - square.col).abs, self.cols - (col - square.col).abs].min
+        dist2 = dr*dr + dc*dc
+        result.push(self.map[row][col]) if dist2 <= radius2
+      end
+    end
+    return result
+  end
+
   def unexploredSquares
     @map.flatten(1).reject{|square| not square.interesting?}
   end
@@ -162,8 +180,6 @@ $:.unshift File.dirname($0)
 require 'ants.rb'
 ai = AI.new
 ai.setup do |ai|
-  ai.sightRadius = ai.viewradius.floor - 4
-  #ai.sightRadius = 2
 end
 ai.run do |ai| # this block is executed once for each turn
   log "TURN #{ai.turn_number}"
@@ -173,13 +189,9 @@ ai.run do |ai| # this block is executed once for each turn
   ai.my_ants.each do |ant|
     row = ant.square.row
     col = ant.square.col
-    ai.map[(row - ai.sightRadius) .. (row + ai.sightRadius)].each do |thisRow|
-      thisRow[(col - ai.sightRadius) .. (col + ai.sightRadius)].each do |square|
-        square.seen = true
-      end
+    (ai.squaresWithinRadius2 ant.square, ai.viewradius2).each do |square|
+      square.seen = true
     end
-    #ant.square.seen = true
-    #ant.square.neighbors.each{|square| square.seen = true}
   end
 
   # mark successfully visitted squares as visitted
