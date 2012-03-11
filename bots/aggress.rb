@@ -184,7 +184,6 @@ end
 ai.run do |ai| # this block is executed once for each turn
   log "TURN #{ai.turn_number}"
   
-  # mark successfully visitted squares as visitted
   # mark squares in view of ants as seen
   ai.my_ants.each do |ant|
     row = ant.square.row
@@ -194,7 +193,6 @@ ai.run do |ai| # this block is executed once for each turn
     end
   end
 
-  # mark successfully visitted squares as visitted
   ai.map.each do |row|
     row.each do |square|
       #square.visited = true if square.ant? and square.ant.mine?
