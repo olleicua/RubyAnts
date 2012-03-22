@@ -186,7 +186,7 @@ ai.run do |ai| # this block is executed once for each turn
   
   # mark squares in view of ants as seen
   ai.my_ants.each do |ant|
-    (ai.squaresWithinRadius2 ant.square, ai.viewradius2).each do |square|
+    ai.squaresWithinRadius2(ant.square, ai.viewradius2).each do |square|
       square.seen = true
     end
   end
